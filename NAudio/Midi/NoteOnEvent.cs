@@ -1,40 +1,28 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI note on event
     /// </summary>
-    public class NoteOnEvent : NoteEvent
+    public sealed class NoteOnEvent : NoteEvent
     {
         private NoteEvent offEvent;
-
+        
         /// <summary>
-        /// Reads a new Note On event from a stream of MIDI data
-        /// </summary>
-        /// <param name="br">Binary reader on the MIDI data stream</param>
-        public NoteOnEvent(BinaryReader br)
-            : base(br)
-        {
-        }
-
-        /// <summary>
-        /// Creates a NoteOn event with specified parameters
+        /// Creates a note on event with specified parameters and optionally creates an associated note off event a given duration of time ahead.
         /// </summary>
         /// <param name="absoluteTime">Absolute time of this event</param>
         /// <param name="channel">MIDI channel number</param>
         /// <param name="noteNumber">MIDI note number</param>
         /// <param name="velocity">MIDI note velocity</param>
-        /// <param name="duration">MIDI note duration</param>
-        public NoteOnEvent(long absoluteTime, int channel, int noteNumber,
-            int velocity, int duration)
+        /// <param name="duration">If set, specifies where to place the created note off event.</param>
+        public NoteOnEvent(long absoluteTime, int channel, int noteNumber, int velocity, int? duration)
             : base(absoluteTime, channel, MidiCommandCode.NoteOn, noteNumber, velocity)
         {
-            this.OffEvent = new NoteEvent(absoluteTime, channel, MidiCommandCode.NoteOff,
-                noteNumber, 0);
-            NoteLength = duration;
+            if (duration != null)
+                OffEvent = new NoteOffEvent(absoluteTime + duration.Value, channel, noteNumber, 0);
         }
 
         /// <summary>
@@ -43,7 +31,7 @@ namespace NAudio.Midi
         public override MidiEvent Clone() => new NoteOnEvent(AbsoluteTime, Channel, NoteNumber, Velocity, NoteLength);
 
         /// <summary>
-        /// The associated Note off event
+        /// The associated note off event
         /// </summary>
         public NoteEvent OffEvent
         {
@@ -66,7 +54,6 @@ namespace NAudio.Midi
                     throw new ArgumentException("Note Off Event must be for the same channel");
                 }
                 offEvent = value;
-
             }
         }
 
@@ -111,29 +98,52 @@ namespace NAudio.Midi
         /// <summary>
         /// The duration of this note
         /// </summary>
-        /// <remarks>
-        /// There must be a note off event
-        /// </remarks>
-        public int NoteLength
+        public int? NoteLength
         {
             get
             {
-                return (int)(offEvent.AbsoluteTime - this.AbsoluteTime);
+                return offEvent == null ? (int?)null : (int)(offEvent.AbsoluteTime - AbsoluteTime);
             }
             set
             {
-                if (value < 0)
+                if (value == null)
                 {
-                    throw new ArgumentException("NoteLength must be 0 or greater");
+                    if (OffEvent != null) throw new InvalidOperationException($"If {nameof(OffEvent)} is not null, the note length cannot be null.");
                 }
-                offEvent.AbsoluteTime = this.AbsoluteTime + value;
+                else
+                {
+                    if (OffEvent == null) throw new InvalidOperationException($"If {nameof(OffEvent)} is null, the note length must be null.");
+                    if (value.Value < 0) throw new ArgumentOutOfRangeException(nameof(value), value.Value, "Note length must be greater than or equal to zero.");
+                    offEvent.AbsoluteTime = AbsoluteTime + value.Value;
+                }
             }
         }
 
         /// <summary>
-        /// Calls base class export first, then exports the data 
-        /// specific to this event
-        /// <seealso cref="MidiEvent.Export">MidiEvent.Export</seealso>
+        /// The absolute time for this event
+        /// </summary>
+        public override long AbsoluteTime
+        {
+            get { return base.AbsoluteTime; }
+            set
+            {
+                base.AbsoluteTime = value;
+                NoteLength = NoteLength;
+            }
+        }
+
+        /// <summary>
+        /// Reads a new note on event from a stream of MIDI data
+        /// </summary>
+        public static NoteOnEvent Import(long absoluteTime, int channel, BinaryReader br)
+        {
+            byte noteNumber, velocity;
+            ParseNoteParameters(br, out noteNumber, out velocity);
+            return new NoteOnEvent(absoluteTime, channel, noteNumber, velocity, null);
+        }
+
+        /// <summary>
+        /// Describes the note Event
         /// </summary>
         public override string ToString()
         {

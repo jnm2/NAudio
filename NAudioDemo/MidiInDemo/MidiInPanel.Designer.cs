@@ -32,7 +32,7 @@ namespace NAudioDemo.MidiInDemo
             this.comboBoxMidiInDevices = new System.Windows.Forms.ComboBox();
             this.labelDevice = new System.Windows.Forms.Label();
             this.buttonMonitor = new System.Windows.Forms.Button();
-            this.checkBoxFilterAutoSensing = new System.Windows.Forms.CheckBox();
+            this.checkBoxFilterActiveSensing = new System.Windows.Forms.CheckBox();
             this.progressLog1 = new NAudio.Utils.ProgressLog();
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -70,15 +70,15 @@ namespace NAudioDemo.MidiInDemo
             this.buttonMonitor.UseVisualStyleBackColor = true;
             this.buttonMonitor.Click += new System.EventHandler(this.buttonMonitor_Click);
             // 
-            // checkBoxFilterAutoSensing
+            // checkBoxFilterActiveSensing
             // 
-            this.checkBoxFilterAutoSensing.AutoSize = true;
-            this.checkBoxFilterAutoSensing.Location = new System.Drawing.Point(384, 47);
-            this.checkBoxFilterAutoSensing.Name = "checkBoxFilterAutoSensing";
-            this.checkBoxFilterAutoSensing.Size = new System.Drawing.Size(114, 17);
-            this.checkBoxFilterAutoSensing.TabIndex = 4;
-            this.checkBoxFilterAutoSensing.Text = "Filter Auto-Sensing";
-            this.checkBoxFilterAutoSensing.UseVisualStyleBackColor = true;
+            this.checkBoxFilterActiveSensing.AutoSize = true;
+            this.checkBoxFilterActiveSensing.Location = new System.Drawing.Point(384, 47);
+            this.checkBoxFilterActiveSensing.Name = "checkBoxFilterActiveSensing";
+            this.checkBoxFilterActiveSensing.Size = new System.Drawing.Size(114, 17);
+            this.checkBoxFilterActiveSensing.TabIndex = 4;
+            this.checkBoxFilterActiveSensing.Text = "Filter Auto-Sensing";
+            this.checkBoxFilterActiveSensing.UseVisualStyleBackColor = true;
             // 
             // progressLog1
             // 
@@ -147,7 +147,7 @@ namespace NAudioDemo.MidiInDemo
             this.ClientSize = new System.Drawing.Size(510, 399);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.buttonClearLog);
-            this.Controls.Add(this.checkBoxFilterAutoSensing);
+            this.Controls.Add(this.checkBoxFilterActiveSensing);
             this.Controls.Add(this.progressLog1);
             this.Controls.Add(this.buttonMonitor);
             this.Controls.Add(this.labelDevice);
@@ -169,7 +169,7 @@ namespace NAudioDemo.MidiInDemo
         private System.Windows.Forms.Label labelDevice;
         private System.Windows.Forms.Button buttonMonitor;
         private NAudio.Utils.ProgressLog progressLog1;
-        private System.Windows.Forms.CheckBox checkBoxFilterAutoSensing;
+        private System.Windows.Forms.CheckBox checkBoxFilterActiveSensing;
         private System.Windows.Forms.Button buttonClearLog;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox checkBoxMidiOutMessages;

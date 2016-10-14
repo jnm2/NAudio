@@ -39,33 +39,40 @@ namespace NAudioTests.Midi
         [Test]
         public void SequencerSpecificIsDeepClone()
         {
-            var ev = new SequencerSpecificEvent(new byte[] { 0x01 }, 0);
+            var ev = new SequencerSpecificEvent(0, new byte[] { 0x01 });
             var clone = (SequencerSpecificEvent)ev.Clone();
             Assert.That(clone.Data, Is.Not.SameAs(ev.Data));
         }
 
         private static IEnumerable<TestCaseData> AllMidiEventTypes =>
-            from midiEventType in typeof(MidiEvent).Assembly.GetTypes().Where(typeof(MidiEvent).IsAssignableFrom)
+            from midiEventType in typeof(MidiEvent).Assembly.GetTypes()
+            where typeof(MidiEvent).IsAssignableFrom(midiEventType) && !midiEventType.IsAbstract
             select new TestCaseData(midiEventType).SetName(midiEventType.Name);
 
-        private static readonly Dictionary<Type, MidiEvent> TestMidiEvents = new[]
+        private static readonly Dictionary<Type, MidiEvent> TestMidiEvents = new MidiEvent[]
         {
-            new MidiEvent(0, 1, MidiCommandCode.Eox),
-            new ChannelAfterTouchEvent(0, 1, 0),
+            new ChannelAftertouchEvent(0, 1, 0),
             new ControlChangeEvent(0, 1, MidiController.AllNotesOff, 0),
             new KeySignatureEvent(0, 0, 0), 
-            new MetaEvent(MetaEventType.Copyright, 0, 0),
-            new NoteEvent(0, 1, MidiCommandCode.NoteOff, 0, 0), 
-            new NoteOnEvent(0, 1, 0, 0, 0),
+            new TextEvent(MetaEventType.Copyright, 0, null), 
+            new NoteOnEvent(0, 1, 0, 0, null),
+            new NoteOffEvent(0, 1, 0, 0),
+            new KeyAftertouchEvent(0, 1, 0, 0), 
             new PatchChangeEvent(0, 1, 0),
             new PitchWheelChangeEvent(0, 1, 0),
-            new SequencerSpecificEvent(new byte[0], 0),
-            new SmpteOffsetEvent(1, 1, 1, 1, 1),
-            new SysexEvent(),
+            new SequencerSpecificEvent(0, new byte[0]),
+            new SmpteOffsetEvent(0, 1, 1, 1, 1, 1),
+            new SysexEvent(0, null),
             new TempoEvent(0, 0),
-            new TextEvent(string.Empty, MetaEventType.Copyright, 0),
             new TimeSignatureEvent(0, 1, 1, 1, 1),
-            new TrackSequenceNumberEvent(1)
+            new TrackSequenceNumberEvent(0, 1),
+            new StartSequenceEvent(0),
+            new ContinueSequenceEvent(0),
+            new StopSequenceEvent(0),
+            new ActiveSensingEvent(0), 
+            new TimingClockEvent(0),
+            new EndTrackEvent(0), 
+            new RawMetaEvent(MetaEventType.Copyright, 0, null), 
         }.ToDictionary(_ => _.GetType());
 
         [Test, TestCaseSource(nameof(AllMidiEventTypes))]

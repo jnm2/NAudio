@@ -181,10 +181,10 @@ namespace NAudio.Midi
                     {
                         case MidiCommandCode.NoteOff:
                         case MidiCommandCode.NoteOn:
-                        case MidiCommandCode.KeyAfterTouch:
+                        case MidiCommandCode.KeyAftertouch:
                         case MidiCommandCode.ControlChange:
                         case MidiCommandCode.PatchChange:
-                        case MidiCommandCode.ChannelAfterTouch:
+                        case MidiCommandCode.ChannelAftertouch:
                         case MidiCommandCode.PitchWheelChange:
                             EnsureTracks(midiEvent.Channel + 1);
                             trackEvents[midiEvent.Channel].Add(midiEvent);
@@ -294,7 +294,7 @@ namespace NAudio.Midi
                     {
                         if(!MidiEvent.IsEndTrack(list[list.Count-1]))
                         {
-                            list.Add(new MetaEvent(MetaEventType.EndTrack, 0, list[list.Count - 1].AbsoluteTime));
+                            list.Add(new EndTrackEvent(list[list.Count - 1].AbsoluteTime));
                         }
                         track++;
                     }

@@ -18,15 +18,6 @@ namespace NAudio.Midi
         private bool strictChecking;
 
         /// <summary>
-        /// Opens a MIDI file for reading
-        /// </summary>
-        /// <param name="filename">Name of MIDI file</param>
-        public MidiFile(string filename)
-            : this(filename,true)
-        {
-        }
-
-        /// <summary>
         /// MIDI File format
         /// </summary>
         public int FileFormat
@@ -39,12 +30,28 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="filename">Name of MIDI file</param>
         /// <param name="strictChecking">If true will error on non-paired note events</param>
-        public MidiFile(string filename, bool strictChecking)
+        public MidiFile(string filename, bool strictChecking = true)
+            : this(File.OpenRead(filename), false, strictChecking)
+        {
+        }
+
+        /// <summary>
+        /// Opens a MIDI file for reading
+        /// </summary>
+        public MidiFile(Stream stream, bool strictChecking = true)
+            : this(stream, true, strictChecking)
+        {
+        }
+
+        /// <summary>
+        /// Opens a MIDI file for reading
+        /// </summary>
+        private MidiFile(Stream stream, bool leaveOpen, bool strictChecking = true)
         {
             this.strictChecking = strictChecking;
             
-            var br = new BinaryReader(File.OpenRead(filename));
-            using(br) 
+            var br = new BinaryReader(stream);
+            using (leaveOpen ? null : br) 
             {
                 string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                 if(chunkHeader != "MThd") 
@@ -67,15 +74,12 @@ namespace NAudio.Midi
                 {
                     events.AddTrack();
                 }
-                
-                long absoluteTime = 0;
-                
-                for(int track = 0; track < tracks; track++) 
+
+
+                MidiEvent me = null;
+
+                for (int track = 0; track < tracks; track++) 
                 {
-                    if(fileFormat == 1) 
-                    {
-                        absoluteTime = 0;
-                    }
                     chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                     if(chunkHeader != "MTrk") 
                     {
@@ -84,13 +88,19 @@ namespace NAudio.Midi
                     chunkSize = SwapUInt32(br.ReadUInt32());
 
                     long startPos = br.BaseStream.Position;
-                    MidiEvent me = null;
+
+                    // The first event in each MTrk chunk must specify status
+                    // § Standard MIDI Files, p 6, ¶ 2
+                    // The Complete MIDI 1.0 Detailed Specification, document version 96.1, third edition, MIDI Manufacturers Association
+                    // https://www.midi.org/specifications/category/midi-1-0-detailed-specifications
+                    
+                    // So, me should be reset to null for each type 1 track.
+                    if (fileFormat == 1) me = null;
+
                     var outstandingNoteOns = new List<NoteOnEvent>();
                     while(br.BaseStream.Position < startPos + chunkSize) 
                     {
                         me = MidiEvent.ReadNextEvent(br,me);
-                        absoluteTime += me.DeltaTime;
-                        me.AbsoluteTime = absoluteTime;
                         events[track].Add(me);
                         if (me.CommandCode == MidiCommandCode.NoteOn) 
                         {
@@ -218,6 +228,7 @@ namespace NAudio.Midi
             return sb.ToString();
         }
 
+
         /// <summary>
         /// Exports a MIDI file
         /// </summary>
@@ -225,45 +236,52 @@ namespace NAudio.Midi
         /// <param name="events">Events to export</param>
         public static void Export(string filename, MidiEventCollection events)
         {
+            using (var file = File.Create(filename))
+                Export(file, events);
+        }
+
+        /// <summary>
+        /// Exports a MIDI file
+        /// </summary>
+        public static void Export(Stream stream, MidiEventCollection events)
+        {
             if (events.MidiFileType == 0 && events.Tracks > 1)
             {
                 throw new ArgumentException("Can't export more than one track to a type 0 file");
             }
-            using (var writer = new BinaryWriter(File.Create(filename)))
+            var writer = new BinaryWriter(stream);
+            writer.Write(Encoding.UTF8.GetBytes("MThd"));
+            writer.Write(SwapUInt32((uint)6)); // chunk size
+            writer.Write(SwapUInt16((ushort)events.MidiFileType));
+            writer.Write(SwapUInt16((ushort)events.Tracks));
+            writer.Write(SwapUInt16((ushort)events.DeltaTicksPerQuarterNote));
+
+            for (int track = 0; track < events.Tracks; track++ )
             {
-                writer.Write(Encoding.UTF8.GetBytes("MThd"));
-                writer.Write(SwapUInt32((uint)6)); // chunk size
-                writer.Write(SwapUInt16((ushort)events.MidiFileType));
-                writer.Write(SwapUInt16((ushort)events.Tracks));
-                writer.Write(SwapUInt16((ushort)events.DeltaTicksPerQuarterNote));
+                IList<MidiEvent> eventList = events[track];
 
-                for (int track = 0; track < events.Tracks; track++ )
+                writer.Write(Encoding.UTF8.GetBytes("MTrk"));
+                long trackSizePosition = writer.BaseStream.Position;
+                writer.Write(SwapUInt32((uint)0));
+
+                long absoluteTime = events.StartAbsoluteTime;
+
+                // use a stable sort to preserve ordering of MIDI events whose 
+                // absolute times are the same
+                MergeSort.Sort(eventList, new MidiEventComparer());
+                if (eventList.Count > 0)
                 {
-                    IList<MidiEvent> eventList = events[track];
-
-                    writer.Write(Encoding.UTF8.GetBytes("MTrk"));
-                    long trackSizePosition = writer.BaseStream.Position;
-                    writer.Write(SwapUInt32((uint)0));
-
-                    long absoluteTime = events.StartAbsoluteTime;
-
-                    // use a stable sort to preserve ordering of MIDI events whose 
-                    // absolute times are the same
-                    MergeSort.Sort(eventList, new MidiEventComparer());
-                    if (eventList.Count > 0)
-                    {
-                        System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");
-                    }
-                    foreach (MidiEvent midiEvent in eventList)
-                    {
-                        midiEvent.Export(ref absoluteTime, writer);
-                    }
-
-                    uint trackChunkLength = (uint)(writer.BaseStream.Position - trackSizePosition) - 4;
-                    writer.BaseStream.Position = trackSizePosition;
-                    writer.Write(SwapUInt32(trackChunkLength));
-                    writer.BaseStream.Position += trackChunkLength;
+                    System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");
                 }
+                foreach (MidiEvent midiEvent in eventList)
+                {
+                    midiEvent.Export(ref absoluteTime, writer);
+                }
+
+                uint trackChunkLength = (uint)(writer.BaseStream.Position - trackSizePosition) - 4;
+                writer.BaseStream.Position = trackSizePosition;
+                writer.Write(SwapUInt32(trackChunkLength));
+                writer.BaseStream.Position += trackChunkLength;
             }
         }
     }

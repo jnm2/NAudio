@@ -1,13 +1,12 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI patch change event
     /// </summary>
-    public class PatchChangeEvent : MidiEvent
+    public sealed class PatchChangeEvent : MidiEvent
     {
         private byte patch;
 
@@ -41,20 +40,6 @@ namespace NAudio.Midi
         };
 
         /// <summary>
-        /// Reads a new patch change event from a MIDI stream
-        /// </summary>
-        /// <param name="br">Binary reader for the MIDI stream</param>
-        public PatchChangeEvent(BinaryReader br)
-        {
-            patch = br.ReadByte();
-            if ((patch & 0x80) != 0)
-            {
-                // TODO: might be a follow-on
-                throw new FormatException("Invalid patch");
-            }
-        }
-
-        /// <summary>
         /// Creates a new patch change event
         /// </summary>
         /// <param name="absoluteTime">Time of the event</param>
@@ -65,6 +50,11 @@ namespace NAudio.Midi
         {
             this.Patch = patchNumber;
         }
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new PatchChangeEvent(AbsoluteTime, Channel, Patch);
 
         /// <summary>
         /// The Patch Number
@@ -106,10 +96,24 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Calls base class export first, then exports the data 
-        /// specific to this event
-        /// <seealso cref="MidiEvent.Export">MidiEvent.Export</seealso>
+        /// Reads a new patch change event from a MIDI stream
         /// </summary>
+        public static PatchChangeEvent Import(long absoluteTime, int channel, BinaryReader br)
+        {
+            var patch = br.ReadByte();
+            if ((patch & 0x80) != 0)
+            {
+                // TODO: might be a follow-on
+                throw new FormatException("Invalid patch");
+            }
+            return new PatchChangeEvent(absoluteTime, channel, patch);
+        }
+        
+        /// <summary>
+         /// Calls base class export first, then exports the data 
+         /// specific to this event
+         /// <seealso cref="MidiEvent.Export">MidiEvent.Export</seealso>
+         /// </summary>
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);

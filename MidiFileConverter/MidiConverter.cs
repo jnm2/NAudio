@@ -205,11 +205,11 @@ namespace MarkHeath.MidiUtils
             {
                 for (int track = 0; track < outputTrackCount; track++)
                 {
-                    events[track].Add(new TextEvent(name, MetaEventType.SequenceTrackName, 0));
+                    events[track].Add(new TextEvent(MetaEventType.SequenceTrackName, 0, name));
                 }
                 if (settings.AddNameMarker)
                 {
-                    events[0].Add(new TextEvent(name, MetaEventType.Marker, 0));
+                    events[0].Add(new TextEvent(MetaEventType.Marker, 0, name));
                 }
             }
 
@@ -349,7 +349,7 @@ namespace MarkHeath.MidiUtils
                     }
                     else
                     {
-                        events[1].Add(new MetaEvent(MetaEventType.EndTrack, 0, endTrackTime));
+                        events[1].Add(new EndTrackEvent(endTrackTime));
                     }
                 }
             }
@@ -412,7 +412,7 @@ namespace MarkHeath.MidiUtils
                 absoluteTime = eventList[eventList.Count - 1].AbsoluteTime;
             
             if (!IsEndTrack(eventList.LastOrDefault()))
-                eventList.Add(new MetaEvent(MetaEventType.EndTrack, 0, absoluteTime));
+                eventList.Add(new EndTrackEvent(absoluteTime));
         }
 
         private string CreateEzdName(string[] context)

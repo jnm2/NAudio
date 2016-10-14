@@ -8,46 +8,25 @@ namespace NAudio.Midi
     /// <summary>
     /// Represents a MIDI sysex message
     /// </summary>
-    public class SysexEvent : MidiEvent 
+    public sealed class SysexEvent : MidiEvent 
     {
-        private byte[] data;
-        //private int length;
-        
         /// <summary>
-        /// Reads a sysex message from a MIDI stream
+        /// The raw data sent in the sysex message
         /// </summary>
-        /// <param name="br">Stream of MIDI data</param>
-        /// <returns>a new sysex message</returns>
-        public static SysexEvent ReadSysexEvent(BinaryReader br) 
+        public byte[] Data { get; set; }
+
+        /// <summary>
+        /// Creates a MIDI sysex message with specified parameters
+        /// </summary>
+        public SysexEvent(long absoluteTime, byte[] data) : base(absoluteTime, 1, MidiCommandCode.Sysex)
         {
-            SysexEvent se = new SysexEvent();
-            //se.length = ReadVarInt(br);
-            //se.data = br.ReadBytes(se.length);
-
-            List<byte> sysexData = new List<byte>();
-            bool loop = true;
-            while(loop) 
-            {
-                byte b = br.ReadByte();
-                if(b == 0xF7) 
-                {
-                    loop = false;
-                }
-                else 
-                {
-                    sysexData.Add(b);
-                }
-            }
-            
-            se.data = sysexData.ToArray();
-
-            return se;
+            Data = data;
         }
 
         /// <summary>
         /// Creates a deep clone of this MIDI event.
         /// </summary>
-        public override MidiEvent Clone() => new SysexEvent { data = (byte[])data?.Clone() };
+        public override MidiEvent Clone() => new SysexEvent(AbsoluteTime, (byte[])Data?.Clone());
 
         /// <summary>
         /// Describes this sysex message
@@ -56,13 +35,28 @@ namespace NAudio.Midi
         public override string ToString() 
         {
             StringBuilder sb = new StringBuilder();
-            foreach (byte b in data)
+            foreach (byte b in Data)
             {
                 sb.AppendFormat("{0:X2} ", b);
             }
-            return String.Format("{0} Sysex: {1} bytes\r\n{2}",this.AbsoluteTime,data.Length,sb.ToString());
+            return String.Format("{0} Sysex: {1} bytes\r\n{2}",this.AbsoluteTime,Data.Length,sb.ToString());
         }
-        
+
+        /// <summary>
+        /// Reads a sysex message from a MIDI stream
+        /// </summary>
+        public static SysexEvent Import(long absoluteTime, BinaryReader br)
+        {
+            var sysexData = new List<byte>();
+            while (true)
+            {
+                var b = br.ReadByte();
+                if (b == 0xF7) break;
+                sysexData.Add(b);
+            }
+            return new SysexEvent(absoluteTime, sysexData.ToArray());
+        }
+
         /// <summary>
         /// Calls base class export first, then exports the data 
         /// specific to this event
@@ -71,9 +65,7 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            //WriteVarInt(writer,length);
-            //writer.Write(data, 0, data.Length);
-            writer.Write(data, 0, data.Length);
+            if (Data != null) writer.Write(Data, 0, Data.Length);
             writer.Write((byte)0xF7);
         }
     }

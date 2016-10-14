@@ -1,42 +1,25 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a note MIDI event
     /// </summary>
-    public class NoteEvent : MidiEvent
+    public abstract class NoteEvent : MidiEvent
     {
         private int noteNumber;
         private int velocity;
 
         /// <summary>
-        /// Reads a NoteEvent from a stream of MIDI data
-        /// </summary>
-        /// <param name="br">Binary Reader for the stream</param>
-        public NoteEvent(BinaryReader br)
-        {
-            NoteNumber = br.ReadByte();
-            velocity = br.ReadByte();
-            // it seems it is possible for cubase
-            // to output some notes with a NoteOff velocity > 127
-            if (velocity > 127)
-            {
-                velocity = 127;
-            }
-        }
-
-        /// <summary>
-        /// Creates a MIDI Note Event with specified parameters
+        /// Creates a MIDI note event with specified parameters
         /// </summary>
         /// <param name="absoluteTime">Absolute time of this event</param>
         /// <param name="channel">MIDI channel number</param>
         /// <param name="commandCode">MIDI command code</param>
         /// <param name="noteNumber">MIDI Note Number</param>
         /// <param name="velocity">MIDI Note Velocity</param>
-        public NoteEvent(long absoluteTime, int channel, MidiCommandCode commandCode, int noteNumber, int velocity)
+        protected NoteEvent(long absoluteTime, int channel, MidiCommandCode commandCode, int noteNumber, int velocity)
             : base(absoluteTime, channel, commandCode)
         {
             this.NoteNumber = noteNumber;
@@ -161,15 +144,29 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Describes the Note Event
+        /// Describes the note event
         /// </summary>
-        /// <returns>Note event as a string</returns>
         public override string ToString()
         {
             return String.Format("{0} {1} Vel:{2}",
                 base.ToString(),
                 this.NoteName,
                 this.Velocity);
+        }
+
+        /// <summary>
+        /// Reads note event parameters from a stream of MIDI data
+        /// </summary>
+        protected static void ParseNoteParameters(BinaryReader br, out byte noteNumber, out byte velocity)
+        {
+            noteNumber = br.ReadByte();
+            velocity = br.ReadByte();
+            // it seems it is possible for cubase
+            // to output some notes with a NoteOff velocity > 127
+            if (velocity > 127)
+            {
+                velocity = 127;
+            }
         }
 
         /// <summary>

@@ -1,36 +1,15 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
     /// <summary>
     /// Represents a MIDI control change event
     /// </summary>
-    public class ControlChangeEvent : MidiEvent 
+    public sealed class ControlChangeEvent : MidiEvent 
     {
         private MidiController controller;
         private byte controllerValue;
-
-        /// <summary>
-        /// Reads a control change event from a MIDI stream
-        /// </summary>
-        /// <param name="br">Binary reader on the MIDI stream</param>
-        public ControlChangeEvent(BinaryReader br) 
-        {
-            byte c = br.ReadByte();
-            controllerValue = br.ReadByte();
-            if((c & 0x80) != 0) 
-            {
-                // TODO: might be a follow-on
-                throw new InvalidDataException("Invalid controller");
-            }
-            controller = (MidiController) c;
-            if((controllerValue & 0x80) != 0) 
-            {
-                throw new InvalidDataException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}", controllerValue, controller, br.BaseStream.Position));
-            }
-        }
 
         /// <summary>
         /// Creates a control change event
@@ -45,7 +24,12 @@ namespace NAudio.Midi
             this.Controller = controller;
             this.ControllerValue = controllerValue;
         }
-        
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new ControlChangeEvent(AbsoluteTime, Channel, controller, controllerValue);
+
         /// <summary>
         /// Describes this control change event
         /// </summary>
@@ -65,6 +49,28 @@ namespace NAudio.Midi
         {
             byte c = (byte)controller;
             return base.GetAsShortMessage() + (c << 8) + (controllerValue << 16);
+        }
+        
+        /// <summary>
+        /// Reads a control change event from a MIDI stream
+        /// </summary>
+        public static ControlChangeEvent Import(long absoluteTime, int channel, BinaryReader br)
+        {
+            var c = br.ReadByte();
+            if ((c & 0x80) != 0)
+            {
+                // TODO: might be a follow-on
+                throw new InvalidDataException("Invalid controller");
+            }
+            var controller = (MidiController)c;
+
+            var controllerValue = br.ReadByte();
+            if ((controllerValue & 0x80) != 0)
+            {
+                throw new InvalidDataException($"Invalid controllerValue {controllerValue} for controller {controller}, Pos 0x{br.BaseStream.Position:X}");
+            }
+
+            return new ControlChangeEvent(absoluteTime, channel, controller, controllerValue);
         }
 
         /// <summary>

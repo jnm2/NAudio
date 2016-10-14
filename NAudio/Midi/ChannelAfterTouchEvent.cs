@@ -4,36 +4,41 @@ using System.IO;
 namespace NAudio.Midi
 {
     /// <summary>
-    /// Represents a MIDI Channel AfterTouch Event.
+    /// Represents a MIDI channel aftertouch event.
     /// </summary>
-    public class ChannelAfterTouchEvent : MidiEvent
+    public sealed class ChannelAftertouchEvent : MidiEvent
     {
-        private byte afterTouchPressure;
+        private byte aftertouchPressure;
 
         /// <summary>
-        /// Creates a new ChannelAfterTouchEvent from raw MIDI data
-        /// </summary>
-        /// <param name="br">A binary reader</param>
-        public ChannelAfterTouchEvent(BinaryReader br)
-        {
-            afterTouchPressure = br.ReadByte();
-            if ((afterTouchPressure & 0x80) != 0)
-            {
-                // TODO: might be a follow-on
-                throw new FormatException("Invalid afterTouchPressure");
-            }
-        }
-
-        /// <summary>
-        /// Creates a new Channel After-Touch Event
+        /// Creates a new channel aftertouch event
         /// </summary>
         /// <param name="absoluteTime">Absolute time</param>
         /// <param name="channel">Channel</param>
-        /// <param name="afterTouchPressure">After-touch pressure</param>
-        public ChannelAfterTouchEvent(long absoluteTime, int channel, int afterTouchPressure)
-            : base(absoluteTime, channel, MidiCommandCode.ChannelAfterTouch)
+        /// <param name="aftertouchPressure">Aftertouch pressure</param>
+        public ChannelAftertouchEvent(long absoluteTime, int channel, int aftertouchPressure)
+            : base(absoluteTime, channel, MidiCommandCode.ChannelAftertouch)
         {
-            AfterTouchPressure = afterTouchPressure;
+            AftertouchPressure = aftertouchPressure;
+        }
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new ChannelAftertouchEvent(AbsoluteTime, Channel, aftertouchPressure);
+
+        /// <summary>
+        /// Reads a channel aftertouch event from a MIDI stream
+        /// </summary>
+        public static ChannelAftertouchEvent Import(long absoluteTime, int channel, BinaryReader br)
+        {
+            var aftertouchPressure = br.ReadByte();
+            if ((aftertouchPressure & 0x80) != 0)
+            {
+                throw new InvalidDataException("Invalid aftertouchPressure");
+                // TODO: might be a follow-on
+            }
+            return new ChannelAftertouchEvent(absoluteTime, channel, aftertouchPressure);
         }
 
         /// <summary>
@@ -44,22 +49,22 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            writer.Write(afterTouchPressure);
+            writer.Write(aftertouchPressure);
         }
 
         /// <summary>
         /// The aftertouch pressure value
         /// </summary>
-        public int AfterTouchPressure
+        public int AftertouchPressure
         {
-            get { return afterTouchPressure; }
+            get { return aftertouchPressure; }
             set
             {
                 if (value < 0 || value > 127)
                 {
                     throw new ArgumentOutOfRangeException("value", "After touch pressure must be in the range 0-127");
                 }
-                afterTouchPressure = (byte) value;
+                aftertouchPressure = (byte) value;
             }
         }
     }

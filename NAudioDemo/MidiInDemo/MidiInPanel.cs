@@ -109,7 +109,7 @@ namespace NAudioDemo.MidiInDemo
 
         void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            if (checkBoxFilterAutoSensing.Checked && e.MidiEvent != null && e.MidiEvent.CommandCode == MidiCommandCode.AutoSensing)
+            if (checkBoxFilterActiveSensing.Checked && e.MidiEvent != null && e.MidiEvent.CommandCode == MidiCommandCode.ActiveSensing)
             {
                 return;
             }

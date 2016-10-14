@@ -129,6 +129,15 @@
     <Compile Include="MediaFoundation\IMFReadWriteClassFactory.cs" />
     <Compile Include="MediaFoundation\MediaFoundationErrors.cs" />
     <Compile Include="MediaFoundation\MediaTypes.cs" />
+    <Compile Include="Midi\ActiveSensingEvent.cs" />
+    <Compile Include="Midi\ContinueSequenceEvent.cs" />
+    <Compile Include="Midi\EndTrackEvent.cs" />
+    <Compile Include="Midi\KeyAftertouchEvent.cs" />
+    <Compile Include="Midi\NoteOffEvent.cs" />
+    <Compile Include="Midi\StartSequenceEvent.cs" />
+    <Compile Include="Midi\StopSequenceEvent.cs" />
+    <Compile Include="Midi\TimingClockEvent.cs" />
+    <Compile Include="Midi\RawMetaEvent.cs" />
     <Compile Include="Utils\ChunkIdentifier.cs" />
     <Compile Include="Utils\FieldDescriptionAttribute.cs" />
     <Compile Include="MediaFoundation\IMFActivate.cs" />

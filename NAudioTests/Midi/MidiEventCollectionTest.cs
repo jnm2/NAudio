@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using NAudio.Midi;
 
@@ -14,7 +12,7 @@ namespace NAudioTests.Midi
         public void TestType1()
         {
             MidiEventCollection collection = new MidiEventCollection(1,120);
-            collection.AddEvent(new TextEvent("Test",MetaEventType.TextEvent,0),0);
+            collection.AddEvent(new TextEvent(MetaEventType.TextEvent, 0, "Test"), 0);
             collection.AddEvent(new NoteOnEvent(0, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(15, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(30, 1, 30, 100, 15), 1);
@@ -35,7 +33,7 @@ namespace NAudioTests.Midi
         public void TestType0()
         {
             MidiEventCollection collection = new MidiEventCollection(0, 120);
-            collection.AddEvent(new TextEvent("Test", MetaEventType.TextEvent, 0), 0);
+            collection.AddEvent(new TextEvent(MetaEventType.TextEvent, 0, "Test"), 0);
             collection.AddEvent(new NoteOnEvent(0, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(15, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(30, 1, 30, 100, 15), 1);
@@ -54,7 +52,7 @@ namespace NAudioTests.Midi
         public void TestType1ToType0()
         {
             MidiEventCollection collection = new MidiEventCollection(1, 120);
-            collection.AddEvent(new TextEvent("Test", MetaEventType.TextEvent, 0), 0);
+            collection.AddEvent(new TextEvent(MetaEventType.TextEvent, 0, "Test"), 0);
             collection.AddEvent(new NoteOnEvent(0, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(15, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(30, 1, 30, 100, 15), 1);
@@ -74,7 +72,7 @@ namespace NAudioTests.Midi
         public void TestType0ToType1()
         {
             MidiEventCollection collection = new MidiEventCollection(0, 120);
-            collection.AddEvent(new TextEvent("Test", MetaEventType.TextEvent, 0), 0);
+            collection.AddEvent(new TextEvent(MetaEventType.TextEvent, 0, "Test"), 0);
             collection.AddEvent(new NoteOnEvent(0, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(15, 1, 30, 100, 15), 1);
             collection.AddEvent(new NoteOnEvent(30, 1, 30, 100, 15), 1);

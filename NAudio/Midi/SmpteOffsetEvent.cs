@@ -1,103 +1,80 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Midi
 {
-    class SmpteOffsetEvent : MetaEvent
+    /// <summary>
+    /// Represents a MIDI SMPTE offset event
+    /// </summary>
+    public sealed class SmpteOffsetEvent : MetaEvent
     {
-        private byte hours;
-        private byte minutes;
-        private byte seconds;
-        private byte frames;
-        private byte subFrames; // 100ths of a frame
-
         /// <summary>
-        /// Creates a new time signature event
+        /// Creates a new SMPTE offset event
         /// </summary>
-        public SmpteOffsetEvent(byte hours, byte minutes, byte seconds, byte frames, byte subFrames)
+        public SmpteOffsetEvent(long absoluteTime, byte hours, byte minutes, byte seconds, byte frames, byte subFrames) : base(MetaEventType.SmpteOffset, absoluteTime)
         {
-            this.hours = hours;
-            this.minutes = minutes;
-            this.seconds = seconds;
-            this.frames = frames;
-            this.subFrames = subFrames;
-        }
-
-        /// <summary>
-        /// Reads a new time signature event from a MIDI stream
-        /// </summary>
-        /// <param name="br">The MIDI stream</param>
-        /// <param name="length">The data length</param>
-        public SmpteOffsetEvent(BinaryReader br,int length) 
-        {
-            if(length != 5) 
-            {
-                throw new FormatException(String.Format("Invalid SMPTE Offset length: Got {0}, expected 5",length));
-            }
-            hours = br.ReadByte();
-            minutes = br.ReadByte();
-            seconds = br.ReadByte();
-            frames = br.ReadByte();
-            subFrames = br.ReadByte();
+            Hours = hours;
+            Minutes = minutes;
+            Seconds = seconds;
+            Frames = frames;
+            SubFrames = subFrames;
         }
 
         /// <summary>
         /// Creates a deep clone of this MIDI event.
         /// </summary>
-        public override MidiEvent Clone() => (SmpteOffsetEvent)MemberwiseClone();
+        public override MidiEvent Clone() => new SmpteOffsetEvent(AbsoluteTime, Hours, Minutes, Seconds, Frames, SubFrames);
 
         /// <summary>
         /// Hours
         /// </summary>
-        public int Hours
-        {
-            get { return hours; }
-        }
+        public byte Hours { get; set; }
 
         /// <summary>
         /// Minutes
         /// </summary>
-        public int Minutes
-        {
-            get { return minutes; }
-        }
+        public byte Minutes { get; set; }
 
         /// <summary>
         /// Seconds
         /// </summary>
-        public int Seconds
-        {
-            get { return seconds; }
-        }
+        public byte Seconds { get; set; }
 
         /// <summary>
         /// Frames
         /// </summary>
-        public int Frames
-        {
-            get { return frames; }
-        }
+        public byte Frames { get; set; }
 
         /// <summary>
         /// SubFrames
         /// </summary>
-        public int SubFrames
-        {
-            get { return subFrames; }
-        }
+        public byte SubFrames { get; set; }
 
-        
+
         /// <summary>
-        /// Describes this time signature event
+        /// Describes this SMPTE offset
         /// </summary>
         /// <returns>A string describing this event</returns>
-        public override string ToString() 
+        public override string ToString() => $"{base.ToString()} {Hours}:{Minutes}:{Seconds}:{Frames}:{SubFrames}";
+
+        /// <summary>
+        /// Reads a new SMPTE offset from a MIDI stream
+        /// </summary>
+        public static SmpteOffsetEvent Import(long absoluteTime, BinaryReader br, int length)
         {
-            return String.Format("{0} {1}:{2}:{3}:{4}:{5}",
-                base.ToString(),hours,minutes,seconds,frames,subFrames);
+            if (length != 5) throw new InvalidDataException($"Invalid SMPTE Offset length: Got {length}, expected 5");
+            return new SmpteOffsetEvent(
+                absoluteTime,
+                hours: br.ReadByte(),
+                minutes: br.ReadByte(),
+                seconds: br.ReadByte(),
+                frames: br.ReadByte(),
+                subFrames: br.ReadByte());
         }
+
+        /// <summary>
+        /// The length of the meta event's exported bytes
+        /// </summary>
+        protected override int ExportLength => 5;
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -107,11 +84,11 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            writer.Write(hours);
-            writer.Write(minutes);
-            writer.Write(seconds);
-            writer.Write(frames);
-            writer.Write(subFrames);
+            writer.Write(Hours);
+            writer.Write(Minutes);
+            writer.Write(Seconds);
+            writer.Write(Frames);
+            writer.Write(SubFrames);
         }
     }
 }

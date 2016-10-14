@@ -1,36 +1,14 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
     /// <summary>
     /// Represents a MIDI pitch wheel change event
     /// </summary>
-    public class PitchWheelChangeEvent : MidiEvent 
+    public sealed class PitchWheelChangeEvent : MidiEvent 
     {
         private int pitch;
-        
-        /// <summary>
-        /// Reads a pitch wheel change event from a MIDI stream
-        /// </summary>
-        /// <param name="br">The MIDI stream to read from</param>
-        public PitchWheelChangeEvent(BinaryReader br) 
-        {
-            byte b1 = br.ReadByte();
-            byte b2 = br.ReadByte();
-            if((b1 & 0x80) != 0) 
-            {
-                // TODO: might be a follow-on				
-                throw new FormatException("Invalid pitchwheelchange byte 1");
-            }
-            if((b2 & 0x80) != 0) 
-            {
-                throw new FormatException("Invalid pitchwheelchange byte 2");
-            }
-            
-            pitch = b1 + (b2 << 7); // 0x2000 is normal
-        }
 
         /// <summary>
         /// Creates a new pitch wheel change event
@@ -43,7 +21,12 @@ namespace NAudio.Midi
         {
             Pitch = pitchWheel;
         }
-        
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new PitchWheelChangeEvent(AbsoluteTime, Channel, Pitch);
+
         /// <summary>
         /// Describes this pitch wheel change event
         /// </summary>
@@ -82,6 +65,27 @@ namespace NAudio.Midi
         public override int GetAsShortMessage()
         {
             return base.GetAsShortMessage() + ((pitch & 0x7f) << 8) + (((pitch >> 7) & 0x7f) << 16);
+        }
+
+        /// <summary>
+        /// Reads a pitch wheel change event from a MIDI stream
+        /// </summary>
+        public static PitchWheelChangeEvent Import(long absoluteTime, int channel, BinaryReader br)
+        {
+            var b1 = br.ReadByte();
+            var b2 = br.ReadByte();
+            if ((b1 & 0x80) != 0)
+            {
+                // TODO: might be a follow-on				
+                throw new FormatException("Invalid pitchwheelchange byte 1");
+            }
+            if ((b2 & 0x80) != 0)
+            {
+                throw new FormatException("Invalid pitchwheelchange byte 2");
+            }
+
+            var pitch = b1 + (b2 << 7); // 0x2000 is normal
+            return new PitchWheelChangeEvent(absoluteTime, channel, pitch);
         }
 
         /// <summary>

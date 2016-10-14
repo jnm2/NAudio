@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 
 namespace NAudio.Midi
@@ -6,71 +5,54 @@ namespace NAudio.Midi
     /// <summary>
     /// Represents a MIDI key signature event event
     /// </summary>
-    public class KeySignatureEvent : MetaEvent
+    public sealed class KeySignatureEvent : MetaEvent
     {
-        private byte sharpsFlats;
-        private byte majorMinor;
-
         /// <summary>
-        /// Reads a new track sequence number event from a MIDI stream
+        /// Creates a new key signature event with the specified data
         /// </summary>
-        /// <param name="br">The MIDI stream</param>
-        /// <param name="length">the data length</param>
-        public KeySignatureEvent(BinaryReader br, int length)
+        public KeySignatureEvent(long absoluteTime, byte sharpsFlats, byte majorMinor)
+            : base(MetaEventType.KeySignature, absoluteTime)
         {
-            if (length != 2)
-            {
-                throw new FormatException("Invalid key signature length");
-            }
-            sharpsFlats = br.ReadByte(); // sf=sharps/flats (-7=7 flats, 0=key of C,7=7 sharps)
-            majorMinor = br.ReadByte(); // mi=major/minor (0=major, 1=minor)       }
-        }
-
-        /// <summary>
-        /// Creates a new Key signature event with the specified data
-        /// </summary>
-        public KeySignatureEvent(int sharpsFlats, int majorMinor, long absoluteTime)
-            : base(MetaEventType.KeySignature, 2, absoluteTime)
-        {
-            this.sharpsFlats = (byte) sharpsFlats;
-            this.majorMinor = (byte) majorMinor;
+            SharpsFlats = sharpsFlats;
+            MajorMinor = majorMinor;
         }
 
         /// <summary>
         /// Creates a deep clone of this MIDI event.
         /// </summary>
-        public override MidiEvent Clone() => (KeySignatureEvent)MemberwiseClone();
+        public override MidiEvent Clone() => new KeySignatureEvent(AbsoluteTime, SharpsFlats, MajorMinor);
 
         /// <summary>
-        /// Number of sharps or flats
+        /// Number of sharps or flats (-7=7 flats, 0=key of C,7=7 sharps)
         /// </summary>
-        public int SharpsFlats
-        {
-            get
-            {
-                return sharpsFlats;
-            }
-        }
+        public byte SharpsFlats { get; set; }
 
         /// <summary>
-        /// Major or Minor key
+        /// Major or Minor key (0=major, 1=minor)
         /// </summary>
-        public int MajorMinor
-        {
-            get
-            {
-                return majorMinor;
-            }
-        }
+        public byte MajorMinor { get; set; }
 
         /// <summary>
         /// Describes this event
         /// </summary>
-        /// <returns>String describing the event</returns>
-        public override string ToString()
+        public override string ToString() => $"{base.ToString()} {SharpsFlats} {MajorMinor}";
+
+        /// <summary>
+        /// Reads a new key signature event from a MIDI stream
+        /// </summary>
+        public static KeySignatureEvent Import(long absoluteTime, BinaryReader br, int length)
         {
-            return String.Format("{0} {1} {2}", base.ToString(), sharpsFlats, majorMinor);
+            if (length != 2) throw new InvalidDataException("Invalid key signature length");
+            return new KeySignatureEvent(
+                absoluteTime,
+                sharpsFlats: br.ReadByte(),
+                majorMinor: br.ReadByte());
         }
+
+        /// <summary>
+        /// The length of the meta event's exported bytes
+        /// </summary>
+        protected override int ExportLength => 2;
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -80,8 +62,8 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            writer.Write(sharpsFlats);
-            writer.Write(majorMinor);
+            writer.Write(SharpsFlats);
+            writer.Write(MajorMinor);
         }
     }
 }
