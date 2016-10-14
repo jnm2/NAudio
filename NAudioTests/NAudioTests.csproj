@@ -94,6 +94,7 @@
     <Compile Include="Midi\MidiEventCollectionTest.cs" />
     <Compile Include="Midi\MidiEventCloneTests.cs" />
     <Compile Include="Midi\PitchWheelChangeEventTests.cs" />
+    <Compile Include="Midi\MidiFileTests.cs" />
     <Compile Include="Mixer\MixerApiTests.cs" />
     <Compile Include="Mp3\Mp3FileReaderTests.cs" />
     <Compile Include="Mp3\Mp3FrameTests.cs" />
